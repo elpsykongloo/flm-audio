@@ -105,7 +105,7 @@ class EchoHandler(AsyncStreamHandler):
             elif kind == 2: # text
                 payload = cast(bytes, message[1:])
                 payload = payload.decode()
-                print(payload, flush=True, end='')
+                # print(payload, flush=True, end='')
                 self.output_queue.put_nowait(AdditionalOutputs(payload))
 
     async def shutdown(self) -> None:

@@ -96,7 +96,7 @@ class Connection:
                 elif kind == 2:  # text
                     payload = message[1:]
                     payload = payload.decode()
-                    print(payload, flush=True, end='')
+                    # print(payload, flush=True, end='')
 
         except Exception as e:
             print(e)
