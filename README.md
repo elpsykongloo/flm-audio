@@ -11,6 +11,8 @@ FLM-Audio is a audio-language subversion of [RoboEgo/FLM-Ego](https://arxiv.org/
 ## Technical Report
 Motivation & Survey: [Toward Embodied AGI: A Review of Embodied AI and the Road Ahead](https://arxiv.org/abs/2505.14235)
 
+FLM-Audio Research Paper: [FLM-Audio: Natural Monologues Improves Native Full-Duplex Chatbots via Dual Training](https://arxiv.org/abs/2509.02521)
+
 System Card: [RoboEgo System Card: An Omnimodal Model with Native Full Duplexity](https://arxiv.org/abs/2506.01934v1)
 
 
