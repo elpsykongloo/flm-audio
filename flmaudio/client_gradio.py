@@ -121,6 +121,15 @@ def main():
         "--use-turn-server", action="store_true", help="whether to use turn server."
     )
     parser.add_argument(
+        "--turn-url", type=str, default="turn:115.190.107.191:3478", help="TURN server URL"
+    )
+    parser.add_argument(
+        "--turn-username", type=str, default="cofe", help="TURN server username"
+    )
+    parser.add_argument(
+        "--turn-credential", type=str, default="EAw0rZ1GW0bQUj6m", help="TURN server credential"
+    )
+    parser.add_argument(
         "--time-limit", type=int, default=180, help="conversation time limit"
     )
     parser.add_argument(
@@ -136,14 +145,15 @@ def main():
         "--ssl_keyfile", type=str, default='./ssl/privatekey.pem', help="ssl keyfile path"
     )
     args = parser.parse_args()
+
+    global rtc_configuration
     if args.use_turn_server:
-        global rtc_configuration
         rtc_configuration = {
             "iceServers": [
                 {
-                    "urls": "turn:115.190.107.191:3478",
-                    "username": "cofe",
-                    "credential": "EAw0rZ1GW0bQUj6m",
+                    "urls": args.turn_url,
+                    "username": args.turn_username,
+                    "credential": args.turn_credential,
                 }
             ]
         }
