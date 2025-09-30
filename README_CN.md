@@ -6,7 +6,7 @@
 # FLM-Audio
 
 <p align="center">
-        🤗 <a href="https://huggingface.co/CofeAI">Hugging Face</a>&nbsp&nbsp | &nbsp&nbsp🤖 <a href="https://modelscope.cn/organization/FLM">ModelScope</a>&nbsp&nbsp | &nbsp&nbsp 📑 <a href="https://arxiv.org/abs/2509.02521">Paper</a> &nbsp&nbsp ｜ &nbsp&nbsp🖥️ <a href="https://modelscope.cn/studios/FLM/FLM-Audio-Demo/summary">Demo</a>
+        🤗 <a href="https://huggingface.co/CofeAI">Hugging Face</a>&nbsp&nbsp | &nbsp&nbsp🤖 <a href="https://modelscope.cn/organization/FLM">ModelScope</a>&nbsp&nbsp | &nbsp&nbsp 📑 <a href="https://arxiv.org/abs/2509.02521">Paper</a> &nbsp&nbsp ｜ &nbsp&nbsp🖥️ <a href="https://flm-audio.cofeai.cn/">Demo</a>
 </p>
 
 FLM-Audio 是一个原生全双工语音模型，其技术来源于 [RoboEgo/FLM-Ego](https://arxiv.org/abs/2506.01934v1)，一个原生全双工（native full‑duplexity）的全模态模型（omnimodal）。FLM-Audio能够同时听、说并生成内部独白，以低延迟在中英文两种语言中提供双向对话。FLM‑Audio 对噪声与用户打断具有很好的鲁棒性，响应性与自然度均得到了很好的保证。
@@ -22,6 +22,16 @@ FLM-Audio 是一个原生全双工语音模型，其技术来源于 [RoboEgo/FLM
 FLM-Audio 论文： [FLM-Audio: Natural Monologues Improves Native Full-Duplex Chatbots via Dual Training](https://arxiv.org/abs/2509.02521)
 
 RoboEgo 论文： [RoboEgo System Card: An Omnimodal Model with Native Full Duplexity](https://arxiv.org/abs/2506.01934v1)
+
+## 在线Demo
+
+我们提供了一个简单的交互式Demo示例，请访问[flm-audio-Demo](https://flm-audio.cofeai.cn/)，[备用服务](https://flm-audio.cofenet.cn/)。当前模型已经支持流式输入输出，用户可通过直接语音对话的方式和FLM-Audio交互，模型将流式输出返回语音。
+
+**注意**：
+- 建议聊一些历史相关的问题，比如*“介绍下中国的历史”*、*“介绍下唐太宗李世民”*等；
+- 目前服务器资源有限，如果提示`Too many concurrent connections. Please try again later!`，那么请稍候再试；
+- 由于语音流式传输延迟要求较高，因此网络环境比较好的情况下可以获得更好体验。
+- 服务器资源有限，单个对话时长限制5分钟；您可以部署自己的应用来体验更长的时间。
 
 ## 偏见、风险与限制
 

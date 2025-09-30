@@ -6,7 +6,7 @@
 # FLM-Audio
 
 <p align="center">
-        🤗 <a href="https://huggingface.co/CofeAI">Hugging Face</a>&nbsp&nbsp | &nbsp&nbsp🤖 <a href="https://modelscope.cn/organization/FLM">ModelScope</a>&nbsp&nbsp | &nbsp&nbsp 📑 <a href="https://arxiv.org/abs/2509.02521">Paper</a> &nbsp&nbsp ｜ &nbsp&nbsp🖥️ <a href="https://modelscope.cn/studios/FLM/FLM-Audio-Demo/summary">Demo</a>
+        🤗 <a href="https://huggingface.co/CofeAI">Hugging Face</a>&nbsp&nbsp | &nbsp&nbsp🤖 <a href="https://modelscope.cn/organization/FLM">ModelScope</a>&nbsp&nbsp | &nbsp&nbsp 📑 <a href="https://arxiv.org/abs/2509.02521">Paper</a> &nbsp&nbsp ｜ &nbsp&nbsp🖥️ <a href="https://flm-audio.cofeai.cn/">Demo</a>
 </p>
 
 FLM-Audio is a audio-language subversion of [RoboEgo/FLM-Ego](https://arxiv.org/abs/2506.01934v1) -- an omnimodal model with native full duplexity. It simultaneously listens, speaks, and composes internal monologue, delivering low‑latency, duplex conversational responses in both English and Chinese. FLM‑Audio is robust to noise and user interruptions, prioritizing responsiveness and naturalness.
@@ -21,6 +21,17 @@ Motivation & Survey: [Toward Embodied AGI: A Review of Embodied AI and the Road 
 FLM-Audio Research Paper: [FLM-Audio: Natural Monologues Improves Native Full-Duplex Chatbots via Dual Training](https://arxiv.org/abs/2509.02521)
 
 Omnimodal System Card: [RoboEgo System Card: An Omnimodal Model with Native Full Duplexity](https://arxiv.org/abs/2506.01934v1)
+
+## Online Demo
+
+We provide a simple interactive demo example: [flm-audio-Demo](https://flm-audio.cofeai.cn/), [Backup Demo](https://flm-audio.cofenet.cn/)
+The current model already supports **streaming input and output**. Users can interact with **FLM-Audio** through direct voice conversations, and the model will return streaming speech responses.
+
+**Notes**:
+- We recommend asking history-related questions, such as *“介绍下中国的历史 (Introduce the history of China)”* or *“介绍下唐太宗李世民 (Tell me about Emperor Taizong of Tang, Li Shimin.)”*
+- Server resources are currently limited. If you see the message `Too many concurrent connections. Please try again later!`, please try again later.
+- Since streaming speech transmission requires low latency, you may get a better experience in a stable and high-quality network environment.
+- Since streaming speech transmission requires low latency, you may get a better experience in a stable and high-quality network environment.
 
 
 ## Bias, Risks, and Limitations
