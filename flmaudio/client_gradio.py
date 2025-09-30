@@ -7,6 +7,7 @@ import asyncio
 from pathlib import Path
 from typing import Literal, cast
 
+import os
 import numpy as np
 import requests
 import sphn
@@ -29,6 +30,22 @@ python client_gradio.py --url=http://10.3.3.117:8990 --time-limit 300 --use-turn
 
 rtc_configuration = None
 
+# ---------------- Visit count persistence ------------
+VISIT_COUNT_FILE = "flmaudio/visit_count.txt"
+
+def load_visit_count():
+    if os.path.exists(VISIT_COUNT_FILE):
+        try:
+            with open(VISIT_COUNT_FILE, "r") as f:
+                return int(f.read().strip())
+        except:
+            return 0
+    return 0
+
+def save_visit_count(count: int):
+    with open(VISIT_COUNT_FILE, "w") as f:
+        f.write(str(count))
+# ---------------------------------------------------
 
 class EchoHandler(AsyncStreamHandler):
     def __init__(
@@ -175,6 +192,17 @@ def main():
         </div>
         """
         )
+
+        # ---------------- Display visit statistics ------------
+        visit_counter = gr.Markdown(value="", elem_id="visit-counter")
+
+        def update_visit_count():
+            count = load_visit_count() + 1
+            save_visit_count(count)
+            return f"👥 Total visitors: **{count}**"
+
+        demo.load(fn=update_visit_count, inputs=None, outputs=visit_counter)
+        # ---------------------------------------------------
 
         webrtc = WebRTC(
             label="Audio Chat",
