@@ -1,7 +1,3 @@
-# Copyright (c) FLM Team, all rights reserved.
-# This source code is licensed under the license found in the
-# LICENSE file in the root directory of this source tree.
-
 import argparse  # 解析命令行参数，用于自定义服务器地址等
 import asyncio  # 异步事件循环，驱动整体客户端流程
 from pathlib import Path  # 处理输入/输出目录
@@ -464,7 +460,7 @@ class Client:
 def main():
     parser = argparse.ArgumentParser("client_opus")  # 构造命令行解析器
     parser.add_argument("--host", default="localhost", type=str, help="Hostname to connect to.")  # 指定服务器主机
-    parser.add_argument("--port", default=8998, type=int, help="Port to connect to.")  # 指定端口
+    parser.add_argument("--port", default=8990, type=int, help="Port to connect to.")  # 指定端口为8990
     parser.add_argument("--https", action='store_true', help="Set this flag for using a https connection.")  # 是否使用 HTTPS
     parser.add_argument("--url", type=str, help='Provides directly a URL, e.g. to a gradio tunnel.')  # 直接指定完整 URL
     parser.add_argument("--input-dir", required=True, help="包含输入 wav 文件的目录路径。")
