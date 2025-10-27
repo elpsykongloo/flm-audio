@@ -1,5 +1,4 @@
 numpy==2.3.1
-sounddevice==0.5.2
+SoundFile==0.12.1
 sphn==0.1.4
-sshkeyboard==2.3.1
 websockets==15.0.1
