@@ -421,7 +421,7 @@ class Client:
             raise RuntimeError(f"写入输出文件 {path} 失败：{exc}") from exc
         log("info", f"成功写入输出音频：{path}")
 
-    async def _process_single_file(self, path: Path, output_path: Path) -> None:
+    async def _process_single_file(self, path: Path) -> None:
         """读取单个文件、推送至服务器并保存返回结果。"""
         try:
             frames = self._load_audio(path)
@@ -442,6 +442,8 @@ class Client:
             log("error", f"与服务器交互时出现异常：{exc}")
             return
 
+        output_name = f"output_{path.name}"
+        output_path = self.output_dir / output_name
         try:
             self._write_output(output_path, output_pcm)
         except Exception as exc:
@@ -454,23 +456,15 @@ class Client:
             return
 
         for path in files:
-            output_name = f"output_{path.name}"
-            output_path = self.output_dir / output_name
-            if output_path.exists():
-                log(
-                    "info",
-                    f"检测到输出文件已存在：{output_path}，为避免覆盖将跳过该音频。",
-                )
-                continue
             log("info", f"开始处理 {path.name}")
-            await self._process_single_file(path, output_path)
+            await self._process_single_file(path)
         log("info", "所有文件均已处理完成。")
 
 
 def main():
     parser = argparse.ArgumentParser("client_opus")  # 构造命令行解析器
     parser.add_argument("--host", default="localhost", type=str, help="Hostname to connect to.")  # 指定服务器主机
-    parser.add_argument("--port", default=8990, type=int, help="Port to connect to.")  # 指定端口
+    parser.add_argument("--port", default=8998, type=int, help="Port to connect to.")  # 指定端口
     parser.add_argument("--https", action='store_true', help="Set this flag for using a https connection.")  # 是否使用 HTTPS
     parser.add_argument("--url", type=str, help='Provides directly a URL, e.g. to a gradio tunnel.')  # 直接指定完整 URL
     parser.add_argument("--input-dir", required=True, help="包含输入 wav 文件的目录路径。")
