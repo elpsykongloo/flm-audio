@@ -2,27 +2,29 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
-import argparse
-import asyncio
-from dataclasses import dataclass
-import json
-import random
-from pathlib import Path
-import time
+import argparse  # 解析命令行参数
+import asyncio  # 提供协程能力
+from dataclasses import dataclass  # 简化状态数据结构定义
+import json  # 处理设置接口的 JSON 数据
+import random  # 设置随机种子
+from pathlib import Path  # 处理文件路径
+import time  # 记录耗时日志
 
-import aiohttp
-from aiohttp import web
-import numpy as np
-import sphn
-import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
-from transformers.generation.streamers import AsyncTextIteratorStreamer
+import aiohttp  # WebSocket 消息类型定义
+from aiohttp import web  # aiohttp 的 Web 应用框架
+import numpy as np  # 数值处理
+import sphn  # Opus 编解码
+import torch  # 深度学习框架
+from transformers import AutoTokenizer, AutoModelForCausalLM  # 文本模型加载
+from transformers.generation.streamers import AsyncTextIteratorStreamer  # 流式文本生成器
 
-from .models import loaders, MimiModel, LMGen
-from .utils import log
+from .models import loaders, MimiModel, LMGen  # 项目内的模型封装
+from .utils import log  # 简单的日志函数
 
 
 def seed_all(seed):
+    """同时设置 Python、NumPy、Torch 的随机种子。"""
+
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed(seed)
@@ -35,6 +37,8 @@ def seed_all(seed):
 
 @dataclass
 class ServerState:
+    """保存服务端的核心模型与运行状态。"""
+
     mimi: MimiModel
     text_tokenizer: AutoTokenizer
     lm_gen: LMGen
@@ -47,23 +51,24 @@ class ServerState:
         lm: AutoModelForCausalLM,
         device: str | torch.device,
     ):
-        self.mimi = mimi
-        self.text_tokenizer = text_tokenizer
-        self.lm_gen = LMGen(lm, text_tokenizer)
+        self.mimi = mimi  # 音频编解码模型
+        self.text_tokenizer = text_tokenizer  # 文本分词器
+        self.lm_gen = LMGen(lm, text_tokenizer)  # 文本生成包装器
 
-        self.device = device
+        self.device = device  # 模型运行设备
         self.frame_size = int(
             self.mimi.sample_rate / self.mimi.frame_rate
-        )  # 24000/12.5 = 1920
+        )  # 24000/12.5 = 1920，一帧对应的采样点数量
 
-        self.lock = asyncio.Lock()
+        self.lock = asyncio.Lock()  # 控制单连接独占模型
 
-        self.mimi.streaming_forever(1)
-        self.lm_gen.streaming_forever(1)
+        self.mimi.streaming_forever(1)  # 预热流式编码器
+        self.lm_gen.streaming_forever(1)  # 预热流式语言模型
 
-        self.settings = {}
+        self.settings = {}  # 保存最新的参数设置
 
     def warmup(self):
+        """通过伪随机输入跑几轮推理以加载权重。"""
         for chunk in range(4):
             chunk = (
                 np.random.rand(1, 1, self.frame_size).astype(np.float32) - 0.5
@@ -78,16 +83,19 @@ class ServerState:
         torch.cuda.synchronize()
 
     async def handle_chat(self, request):
+        """WebSocket 入口：处理实时音频对话。"""
         ws = web.WebSocketResponse()
         await ws.prepare(request)
 
         text_streamer = None
 
         async def send_bytes(data: bytes):
+            """安全地向前端发送二进制数据。"""
             if not ws.closed:
                 await ws.send_bytes(data)
 
         async def recv_loop():
+            """接收浏览器发来的音频并送入 Opus 解码器。"""
             nonlocal close, text_streamer
             try:
                 async for message in ws:
@@ -120,6 +128,7 @@ class ServerState:
                 log("info", "connection closed")
 
         async def opus_loop():
+            """从 Opus 解码器持续取出 PCM，并驱动解码流程。"""
             all_pcm_data = None
 
             while not close:
@@ -143,6 +152,7 @@ class ServerState:
                     log("info", f"frame handled in {1000 * (time.time() - be):.1f}ms")
 
         async def decode_step(chunk):
+            """将 PCM 音频送入 mimi 与语言模型，产出语音与文本。"""
             nonlocal text_streamer
             chunk = torch.from_numpy(chunk).to(torch.float32)
             chunk = chunk.to(device=self.device)[None, None]
@@ -169,6 +179,7 @@ class ServerState:
                             text_streamer = None
 
         async def audio_loop():
+            """把编码好的音频帧持续发送给前端。"""
             while not close:
                 await asyncio.sleep(0.001)
                 msg = opus_writer.read_bytes()
@@ -176,6 +187,7 @@ class ServerState:
                     await send_bytes(b"\x01" + msg)
 
         async def text_loop():
+            """把生成的文本逐段发送给前端。"""
             while not close:
                 await asyncio.sleep(0.001)
                 if text_streamer:
@@ -200,6 +212,7 @@ class ServerState:
         return ws
 
     async def handle_settings(self, request):
+        """HTTP 接口：更新推理参数。"""
         try:
             settings = await request.json()
         except json.JSONDecodeError:
@@ -221,7 +234,7 @@ class ServerState:
 
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser()  # 构造命令行解析器
     parser.add_argument("--host", default="0.0.0.0", type=str)
     parser.add_argument("--port", default=8990, type=int)
     parser.add_argument(
@@ -255,8 +268,8 @@ def main():
         ),
     )
 
-    args = parser.parse_args()
-    seed_all(42)
+    args = parser.parse_args()  # 解析命令行参数
+    seed_all(42)  # 固定随机种子
 
     log("info", "loading mimi")
 

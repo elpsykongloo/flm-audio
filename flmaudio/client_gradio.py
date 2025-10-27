@@ -2,21 +2,21 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
-import argparse
-import asyncio
-from pathlib import Path
-from typing import Literal, cast
+import argparse  # 解析命令行参数
+import asyncio  # 异步协程支持
+from pathlib import Path  # 用于处理文件路径
+from typing import Literal, cast  # 类型注解辅助
 
-import os
-import numpy as np
-import requests
-import sphn
-from numpy.typing import NDArray
+import os  # 文件系统读写
+import numpy as np  # 数组计算
+import requests  # 发送 HTTP 请求更新服务端设置
+import sphn  # Opus 编解码
+from numpy.typing import NDArray  # ndarray 的类型别名
 
 try:
-    import gradio as gr
-    from websockets.asyncio.client import connect
-    from fastrtc import AdditionalOutputs, AsyncStreamHandler, WebRTC, wait_for_item
+    import gradio as gr  # 构建 WebUI 的库
+    from websockets.asyncio.client import connect  # WebSocket 客户端
+    from fastrtc import AdditionalOutputs, AsyncStreamHandler, WebRTC, wait_for_item  # FastRTC 的核心组件
 except ImportError:
     raise ImportError("Please install fastrtc>=0.0.21 to run this script.")
 
@@ -28,12 +28,15 @@ python client_gradio.py --url=http://10.3.3.117:8990 --time-limit 300 --use-turn
 """
 
 
-rtc_configuration = None
+rtc_configuration = None  # WebRTC 的 ICE 配置，默认不使用 TURN 服务器
 
 # ---------------- Visit count persistence ------------
-VISIT_COUNT_FILE = "flmaudio/visit_count.txt"
+VISIT_COUNT_FILE = "flmaudio/visit_count.txt"  # 访问量统计文件路径
+
 
 def load_visit_count():
+    """读取累计访客数量，读取失败时返回 0。"""
+
     if os.path.exists(VISIT_COUNT_FILE):
         try:
             with open(VISIT_COUNT_FILE, "r") as f:
@@ -42,12 +45,17 @@ def load_visit_count():
             return 0
     return 0
 
+
 def save_visit_count(count: int):
+    """持久化存储最新访客数量。"""
+
     with open(VISIT_COUNT_FILE, "w") as f:
         f.write(str(count))
 # ---------------------------------------------------
 
 class EchoHandler(AsyncStreamHandler):
+    """FastRTC 的流式处理器：负责音频与文本的双向传输。"""
+
     def __init__(
         self,
         url: str,
@@ -55,20 +63,20 @@ class EchoHandler(AsyncStreamHandler):
         output_sample_rate: int = 24000,
         output_frame_size: int = 480,
     ) -> None:
-        self.url = url
-        proto, without_proto = self.url.split("://", 1)
+        self.url = url  # 用户输入的服务器地址
+        proto, without_proto = self.url.split("://", 1)  # 拆分协议与域名
         if proto in ["ws", "http"]:
-            proto = "ws"
+            proto = "ws"  # 将 http/ ws 统一转换为 ws
         elif proto in ["wss", "https"]:
-            proto = "wss"
+            proto = "wss"  # 将 https/wss 统一成 wss
 
-        self.output_chunk_size = 1920
-        self.ws = None
-        self.ws_url = f"{proto}://{without_proto}/api/chat"
-        self.stream_reader = sphn.OpusStreamReader(output_sample_rate)
-        self.stream_writer = sphn.OpusStreamWriter(output_sample_rate)
-        self.output_queue = asyncio.Queue()
-        self.output_buffer = None
+        self.output_chunk_size = 1920  # 每次发送给浏览器的音频帧长度
+        self.ws = None  # WebSocket 连接对象占位
+        self.ws_url = f"{proto}://{without_proto}/api/chat"  # 真实的 WebSocket API 地址
+        self.stream_reader = sphn.OpusStreamReader(output_sample_rate)  # 解码服务器返回的音频
+        self.stream_writer = sphn.OpusStreamWriter(output_sample_rate)  # 编码浏览器麦克风输入
+        self.output_queue = asyncio.Queue()  # 音频/文本输出队列
+        self.output_buffer = None  # 累积音频数据，确保输出分片长度一致
 
         super().__init__(
             expected_layout,
@@ -78,6 +86,8 @@ class EchoHandler(AsyncStreamHandler):
         )
 
     async def receive(self, frame: tuple[int, NDArray]) -> None:
+        """接收来自浏览器的 PCM 音频，将其编码并发送到服务器。"""
+
         if not self.ws:
             return
         _, array = frame
@@ -87,9 +97,11 @@ class EchoHandler(AsyncStreamHandler):
         await self.ws.send(bytes)
 
     async def emit(self) -> tuple[int, NDArray] | AdditionalOutputs | None:
+        """从输出队列取出一条消息返回给浏览器。"""
         return await wait_for_item(self.output_queue)
 
     def copy(self) -> AsyncStreamHandler:
+        """按照 FastRTC 要求，返回同配置的新处理器副本。"""
         return EchoHandler(
             self.url,
             self.expected_layout,  # type: ignore
@@ -98,6 +110,8 @@ class EchoHandler(AsyncStreamHandler):
         )
 
     async def start_up(self):
+        """在 WebRTC 会话开始时建立到服务器的 WebSocket 连接并处理返回数据。"""
+
         self.ws = await connect(self.ws_url, proxy=None)
         async for message in self.ws:
             if len(message) == 0:
@@ -126,14 +140,15 @@ class EchoHandler(AsyncStreamHandler):
                 self.output_queue.put_nowait(AdditionalOutputs(payload))
 
     async def shutdown(self) -> None:
+        """在会话结束时清理 WebSocket 连接。"""
         if self.ws:
             await self.ws.close()
             self.ws = None
 
 
 def main():
-    parser = argparse.ArgumentParser("client_gradio")
-    parser.add_argument("--url", type=str, help="URL to flmaudio server.")
+    parser = argparse.ArgumentParser("client_gradio")  # 构建命令行解析器
+    parser.add_argument("--url", type=str, help="URL to flmaudio server.")  # 服务端地址
     parser.add_argument(
         "--use-turn-server", action="store_true", help="whether to use turn server."
     )
@@ -161,7 +176,7 @@ def main():
     parser.add_argument(
         "--ssl_keyfile", type=str, default='./ssl/privatekey.pem', help="ssl keyfile path"
     )
-    args = parser.parse_args()
+    args = parser.parse_args()  # 解析命令行参数
 
     global rtc_configuration
     if args.use_turn_server:
@@ -175,7 +190,7 @@ def main():
             ]
         }
 
-    http_url = args.url
+    http_url = args.url  # Gradio 端访问的 HTTP 地址
     if http_url.startswith("ws"):
         http_url = http_url.replace("ws", "http", 1)
 
@@ -194,9 +209,11 @@ def main():
         )
 
         # ---------------- Display visit statistics ------------
-        visit_counter = gr.Markdown(value="", elem_id="visit-counter")
+        visit_counter = gr.Markdown(value="", elem_id="visit-counter")  # 展示访客统计
 
         def update_visit_count():
+            """页面加载时增加访问量并返回最新统计文案。"""
+
             count = load_visit_count() + 1
             save_visit_count(count)
             return f"👥 Total visitors: **{count}**"
@@ -253,6 +270,7 @@ def main():
                     )
 
         def update_settings(*args):
+            """收集所有控件的值并组成字典。"""
             return {
                 "use_sampling": args[0],
                 "temp_audio": args[1],
@@ -268,6 +286,7 @@ def main():
             }
 
         def on_settings_change(settings):
+            """在参数变化时调用后端接口同步设置。"""
             try:
                 response = requests.post(f"{http_url}/api/settings", json=settings)
                 if response.status_code == 200:
@@ -278,7 +297,7 @@ def main():
                 print(f"设置更新出错：{str(e)}")
             return None
 
-        settings = gr.State({})
+        settings = gr.State({})  # 存储最新的设置字典，方便触发 change 回调
 
         settings.change(
             fn=on_settings_change,
